@@ -24,6 +24,7 @@ export default function ChatComposer({ disabled, onSend, onStop }: Props) {
       <textarea
         className="w-full border rounded px-3 py-2 min-h-[80px]"
         placeholder="Type a message…"
+        aria-label="Chat input"
         value={text}
         onChange={(e) => setText(e.target.value)}
         onKeyDown={handleKeyDown}
@@ -54,4 +55,3 @@ export default function ChatComposer({ disabled, onSend, onStop }: Props) {
     </div>
   );
 }
-

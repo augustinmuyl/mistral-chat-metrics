@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Topbar from "@/components/Topbar";
 import MessageList from "@/components/MessageList";
 import ChatComposer from "@/components/ChatComposer";
@@ -92,7 +92,7 @@ export default function Home() {
       };
       setReqKB(bytesToKB(jsonByteLength(body)));
 
-      let assistantId = newId();
+      const assistantId = newId();
       setMessages((prev) => [
         ...prev,
         { id: assistantId, role: "assistant", content: "" },
@@ -163,7 +163,7 @@ export default function Home() {
     if (typeof window !== "undefined") {
       try {
         window.localStorage.removeItem("mistral.chat.conversations");
-      } catch {}
+      } catch { }
     }
   }, []);
 
@@ -180,12 +180,14 @@ export default function Home() {
         onClearHistory={onClearHistory}
       />
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-[1fr_20rem] max-w-5xl mx-auto w-full gap-0">
-        <main className="px-4 py-4 flex flex-col gap-4">
-          {hasMessages ? (
-            <MessageList messages={messages} />
-          ) : (
-            <EmptyState />
-          )}
+        <main className="px-4 py-4 flex flex-col gap-4 min-h-0">
+          <div className="flex-1 min-h-0 overflow-y-auto pr-1">
+            {hasMessages ? (
+              <MessageList messages={messages} />
+            ) : (
+              <EmptyState />
+            )}
+          </div>
           <ChatComposer disabled={isStreaming} onSend={onSend} onStop={onStop} />
         </main>
         <SidebarMetrics
