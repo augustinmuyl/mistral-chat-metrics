@@ -1,11 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { motion } from "motion/react";
 import Topbar from "@/components/Topbar";
 import MessageList from "@/components/MessageList";
 import ChatComposer from "@/components/ChatComposer";
 import SidebarMetrics from "@/components/SidebarMetrics";
 import EmptyState from "@/components/EmptyState";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import type { Message } from "@/lib/schemas";
 import { streamChat, type StreamController } from "@/lib/streaming";
 import {
@@ -15,7 +17,7 @@ import {
   computeLatencyMs,
   jsonByteLength,
 } from "@/lib/metrics";
-import { saveConversation, loadConversations } from "@/lib/storage";
+import { saveConversation, loadConversations, clearConversation } from "@/lib/storage";
 
 function newId() {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
@@ -160,17 +162,24 @@ export default function Home() {
   );
 
   const onClearHistory = useCallback(() => {
-    if (typeof window !== "undefined") {
-      try {
-        window.localStorage.removeItem("mistral.chat.conversations");
-      } catch { }
-    }
-  }, []);
+    if (isStreaming) onStop();
+    try {
+      clearConversation(convIdRef.current);
+    } catch { }
+    setMessages([]);
+    setLatencyMs(undefined);
+    setDurationMs(undefined);
+    setReqKB(undefined);
+    setRespKB(undefined);
+    setTokens(undefined);
+    assistantContentRef.current = "";
+    convIdRef.current = newId();
+  }, [isStreaming, onStop]);
 
   const hasMessages = messages.length > 0;
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="h-dvh overflow-hidden flex flex-col">
       <Topbar
         model={currentModel}
         onModelChange={setCurrentModel}
@@ -179,27 +188,67 @@ export default function Home() {
         mockEnabled={mockEnabled}
         onClearHistory={onClearHistory}
       />
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-[1fr_20rem] max-w-5xl mx-auto w-full gap-0">
-        <main className="px-4 py-4 flex flex-col gap-4 min-h-0">
-          <div className="flex-1 min-h-0 overflow-y-auto pr-1">
-            {hasMessages ? (
+      {hasMessages ? (
+        <motion.div
+          className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[1fr_20rem] max-w-5xl mx-auto w-full gap-0"
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.25, ease: "easeOut" }}
+        >
+          <motion.main
+            className="px-4 py-4 flex flex-col gap-4 min-h-0 max-h-screen"
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
+          >
+            <ScrollArea className="flex-1 min-h-0 pr-1">
               <MessageList messages={messages} />
-            ) : (
+            </ScrollArea>
+            <ChatComposer disabled={isStreaming} onSend={onSend} onStop={onStop} />
+          </motion.main>
+          <motion.div
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25, ease: "easeOut", delay: 0.06 }}
+          >
+            <SidebarMetrics
+              latencyMs={latencyMs}
+              durationMs={durationMs}
+              reqKB={reqKB}
+              respKB={respKB}
+              model={currentModel}
+              preset={currentPreset}
+              tokens={tokens}
+            />
+          </motion.div>
+        </motion.div>
+      ) : (
+        // Initial load: only main components, centered with fade-ins
+        <motion.div
+          className="flex-1 flex items-center justify-center px-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.25 }}
+        >
+          <div className="w-full max-w-2xl">
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35, ease: "easeOut", delay: 0.04 }}
+            >
               <EmptyState />
-            )}
+            </motion.div>
+            <motion.div
+              className="mt-4"
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, ease: "easeOut", delay: 0.12 }}
+            >
+              <ChatComposer disabled={isStreaming} onSend={onSend} onStop={onStop} />
+            </motion.div>
           </div>
-          <ChatComposer disabled={isStreaming} onSend={onSend} onStop={onStop} />
-        </main>
-        <SidebarMetrics
-          latencyMs={latencyMs}
-          durationMs={durationMs}
-          reqKB={reqKB}
-          respKB={respKB}
-          model={currentModel}
-          preset={currentPreset}
-          tokens={tokens}
-        />
-      </div>
+        </motion.div>
+      )}
     </div>
   );
 }

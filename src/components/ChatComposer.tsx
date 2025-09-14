@@ -24,7 +24,6 @@ export default function ChatComposer({ disabled, onSend, onStop }: Props) {
   return (
     <div className="w-full flex items-center gap-2">
       <Textarea
-        className="rounded-full py-[1.5%] pl-[3%]"
         placeholder="Type a message…"
         aria-label="Chat input"
         value={text}
@@ -34,7 +33,6 @@ export default function ChatComposer({ disabled, onSend, onStop }: Props) {
       />
       {disabled ? (
         <Button
-          className="border rounded px-3 py-2 text-sm"
           onClick={() => onStop?.()}
           aria-label="Stop streaming"
         >
@@ -43,7 +41,7 @@ export default function ChatComposer({ disabled, onSend, onStop }: Props) {
       ) : (
         <Button
           variant="outline"
-          className=""
+          size="default"
           onClick={() => {
             if (text.trim().length > 0) {
               onSend?.(text);
