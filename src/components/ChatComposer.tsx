@@ -30,6 +30,7 @@ export default function ChatComposer({ disabled, onSend, onStop }: Props) {
         onChange={(e) => setText(e.target.value)}
         onKeyDown={handleKeyDown}
         disabled={!!disabled}
+        className="max-h-64 md:max-h-80 overflow-auto resize-y"
       />
       {disabled ? (
         <Button onClick={() => onStop?.()} aria-label="Stop streaming">

@@ -60,6 +60,7 @@
 - Press Esc or click Stop to abort a stream. Use “New chat” to start a fresh conversation without deleting previous ones.
 - On reload, you land on the initial screen; conversations are loaded and can be opened from the Conversations menu.
 - Conversation titles are auto-generated from the first message (sanitized and truncated) to remain readable.
+- Large inputs: the composer auto-grows up to a max height, then becomes scrollable so the layout stays stable when pasting long text.
 
 ## Mock Mode
 
