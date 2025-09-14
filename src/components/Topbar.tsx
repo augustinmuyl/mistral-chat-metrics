@@ -31,7 +31,9 @@ export default function Topbar({
 }: Props) {
   return (
     <div className="w-full flex items-center justify-between gap-3 py-3 px-4 border-b">
-      <div className="text-xs sm:text-sm md:text-base lg:text-lg font-semibold">Mistral Chat + Metrics</div>
+      <div className="text-xs sm:text-sm md:text-base lg:text-lg font-semibold">
+        Mistral Chat + Metrics
+      </div>
 
       {/* Desktop controls */}
       <div className="hidden sm:flex items-center gap-2">
@@ -70,7 +72,9 @@ export default function Topbar({
             {mockEnabled ? <DropdownMenuSeparator /> : null}
 
             {/* Model selection */}
-            <div className="px-2 py-1.5 text-xs text-muted-foreground">Model</div>
+            <div className="px-2 py-1.5 text-xs text-muted-foreground">
+              Model
+            </div>
             <DropdownMenuRadioGroup
               value={model}
               onValueChange={(v) => onModelChange(v)}
@@ -86,15 +90,23 @@ export default function Topbar({
             <DropdownMenuSeparator />
 
             {/* Preset selection */}
-            <div className="px-2 py-1.5 text-xs text-muted-foreground">Preset</div>
+            <div className="px-2 py-1.5 text-xs text-muted-foreground">
+              Preset
+            </div>
             <DropdownMenuRadioGroup
               value={preset}
               onValueChange={(v) => onPresetChange(v)}
             >
-              <DropdownMenuRadioItem value="general">General</DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="teacher">Teacher</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="general">
+                General
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="teacher">
+                Teacher
+              </DropdownMenuRadioItem>
               <DropdownMenuRadioItem value="coder">Coder</DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="concise">Concise</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="concise">
+                Concise
+              </DropdownMenuRadioItem>
             </DropdownMenuRadioGroup>
 
             <DropdownMenuSeparator />

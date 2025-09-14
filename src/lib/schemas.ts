@@ -43,4 +43,3 @@ export type MetaChunk = z.infer<typeof MetaChunkSchema>;
 export type DeltaChunk = z.infer<typeof DeltaChunkSchema>;
 export type FinalChunk = z.infer<typeof FinalChunkSchema>;
 export type StreamChunk = z.infer<typeof StreamChunkSchema>;
-

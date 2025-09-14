@@ -32,10 +32,7 @@ export default function ChatComposer({ disabled, onSend, onStop }: Props) {
         disabled={!!disabled}
       />
       {disabled ? (
-        <Button
-          onClick={() => onStop?.()}
-          aria-label="Stop streaming"
-        >
+        <Button onClick={() => onStop?.()} aria-label="Stop streaming">
           Stop
         </Button>
       ) : (

@@ -14,7 +14,9 @@ export default function EmptyState() {
         />
       </div>
       <div className="text-lg mt-6">Start a new conversation</div>
-      <div className="text-sm mt-2">Shift+Enter for newline. Enter to send.</div>
+      <div className="text-sm mt-2">
+        Shift+Enter for newline. Enter to send.
+      </div>
     </div>
   );
 }

@@ -48,7 +48,9 @@ describe("/api/chat (MOCK=1)", () => {
     });
     const res = await POST(req as unknown as NextRequest);
     expect(res.status).toBe(200);
-    expect(res.headers.get("content-type") || "").toContain("text/event-stream");
+    expect(res.headers.get("content-type") || "").toContain(
+      "text/event-stream",
+    );
     const chunks = await readSSEChunks(res);
     expect(chunks[0]?.type).toBe("meta");
     expect(chunks.some((c) => c.type === "delta")).toBe(true);

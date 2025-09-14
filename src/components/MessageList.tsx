@@ -26,9 +26,7 @@ export default function MessageList({ messages }: Props) {
           <div className="text-xs opacity-60 mb-1">{m.role}</div>
           {m.role === "assistant" ? (
             <div className="prose prose-sm max-w-none dark:prose-invert">
-              <ReactMarkdown>
-                {m.content}
-              </ReactMarkdown>
+              <ReactMarkdown>{m.content}</ReactMarkdown>
             </div>
           ) : (
             <div className="whitespace-pre-wrap">{m.content}</div>

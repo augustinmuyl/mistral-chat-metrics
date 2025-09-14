@@ -42,4 +42,3 @@ export function clearConversation(id: string) {
   const list = loadConversations().filter((c) => c.id !== id);
   window.localStorage.setItem(KEY, JSON.stringify(list));
 }
-

@@ -17,7 +17,11 @@ import {
   computeLatencyMs,
   jsonByteLength,
 } from "@/lib/metrics";
-import { saveConversation, loadConversations, clearConversation } from "@/lib/storage";
+import {
+  saveConversation,
+  loadConversations,
+  clearConversation,
+} from "@/lib/storage";
 
 function newId() {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
@@ -28,7 +32,9 @@ export default function Home() {
   const [currentModel, setCurrentModel] = useState("mistral-large-latest");
   const [currentPreset, setCurrentPreset] = useState("general");
   const [isStreaming, setIsStreaming] = useState(false);
-  const [mockEnabled, setMockEnabled] = useState<boolean | undefined>(undefined);
+  const [mockEnabled, setMockEnabled] = useState<boolean | undefined>(
+    undefined,
+  );
 
   const [latencyMs, setLatencyMs] = useState<number | undefined>();
   const [durationMs, setDurationMs] = useState<number | undefined>();
@@ -130,19 +136,23 @@ export default function Home() {
         onFinal: (final) => {
           const now = Date.now();
           setDurationMs(computeDurationMs(t0Ref.current, now));
-          const t =
-            (final.usage?.prompt ?? 0) + (final.usage?.completion ?? 0);
+          const t = (final.usage?.prompt ?? 0) + (final.usage?.completion ?? 0);
           if (t > 0) setTokens(t);
           setIsStreaming(false);
 
           // Persist conversation
-          const title = nextMessages[0]?.content?.slice(0, 60) || "Conversation";
+          const title =
+            nextMessages[0]?.content?.slice(0, 60) || "Conversation";
           const convo = {
             id: convIdRef.current,
             title,
             messages: [
               ...nextMessages,
-              { id: assistantId, role: "assistant", content: assistantContentRef.current },
+              {
+                id: assistantId,
+                role: "assistant",
+                content: assistantContentRef.current,
+              },
             ].map(({ id, role, content }) => ({ id, role, content })),
             model: currentModel,
             preset: currentPreset,
@@ -165,7 +175,7 @@ export default function Home() {
     if (isStreaming) onStop();
     try {
       clearConversation(convIdRef.current);
-    } catch { }
+    } catch {}
     setMessages([]);
     setLatencyMs(undefined);
     setDurationMs(undefined);
@@ -204,7 +214,11 @@ export default function Home() {
             <ScrollArea className="flex-1 min-h-0 pr-1">
               <MessageList messages={messages} />
             </ScrollArea>
-            <ChatComposer disabled={isStreaming} onSend={onSend} onStop={onStop} />
+            <ChatComposer
+              disabled={isStreaming}
+              onSend={onSend}
+              onStop={onStop}
+            />
           </motion.main>
           <motion.div
             initial={{ opacity: 0, y: 6 }}
@@ -244,7 +258,11 @@ export default function Home() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, ease: "easeOut", delay: 0.12 }}
             >
-              <ChatComposer disabled={isStreaming} onSend={onSend} onStop={onStop} />
+              <ChatComposer
+                disabled={isStreaming}
+                onSend={onSend}
+                onStop={onStop}
+              />
             </motion.div>
           </div>
         </motion.div>

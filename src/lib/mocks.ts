@@ -9,4 +9,3 @@ export function mockChunks(): StreamChunk[] {
     { type: "final", usage: { prompt: 5, completion: 6 } },
   ];
 }
-
