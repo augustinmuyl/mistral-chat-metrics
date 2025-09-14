@@ -11,7 +11,6 @@ import { streamChat, type StreamController } from "@/lib/streaming";
 import {
   accumulateResponseBytes,
   bytesToKB,
-  byteLengthOfString,
   computeDurationMs,
   computeLatencyMs,
   jsonByteLength,
@@ -113,7 +112,8 @@ export default function Home() {
           }
           responseBytesRef.current = accumulateResponseBytes(
             responseBytesRef.current,
-            byteLengthOfString(delta.content),
+            // Pass the raw string so the helper can measure bytes
+            delta.content,
           );
           setRespKB(bytesToKB(responseBytesRef.current));
           assistantContentRef.current += delta.content;

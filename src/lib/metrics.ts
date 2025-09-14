@@ -38,8 +38,11 @@ export function jsonByteLength(obj: unknown): number {
   }
 }
 
-export function accumulateResponseBytes(current: number, chunk: string | Uint8Array): number {
-  const add = typeof chunk === "string" ? byteLengthOfString(chunk) : chunk.byteLength;
+export function accumulateResponseBytes(
+  current: number,
+  chunk: string | Uint8Array,
+): number {
+  const add =
+    typeof chunk === "string" ? byteLengthOfString(chunk) : chunk.byteLength;
   return current + add;
 }
-

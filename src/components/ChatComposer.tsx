@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { Textarea } from "./ui/textarea";
+import { Button } from "./ui/button";
 
 type Props = {
   disabled?: boolean;
@@ -20,9 +22,9 @@ export default function ChatComposer({ disabled, onSend, onStop }: Props) {
   }
 
   return (
-    <div className="w-full flex items-end gap-2">
-      <textarea
-        className="w-full border rounded px-3 py-2 min-h-[80px]"
+    <div className="w-full flex items-center gap-2">
+      <Textarea
+        className="rounded-full py-[1.5%] pl-[3%]"
         placeholder="Type a message…"
         aria-label="Chat input"
         value={text}
@@ -31,16 +33,17 @@ export default function ChatComposer({ disabled, onSend, onStop }: Props) {
         disabled={!!disabled}
       />
       {disabled ? (
-        <button
+        <Button
           className="border rounded px-3 py-2 text-sm"
           onClick={() => onStop?.()}
           aria-label="Stop streaming"
         >
           Stop
-        </button>
+        </Button>
       ) : (
-        <button
-          className="border rounded px-3 py-2 text-sm"
+        <Button
+          variant="outline"
+          className=""
           onClick={() => {
             if (text.trim().length > 0) {
               onSend?.(text);
@@ -50,7 +53,7 @@ export default function ChatComposer({ disabled, onSend, onStop }: Props) {
           aria-label="Send message"
         >
           Send
-        </button>
+        </Button>
       )}
     </div>
   );

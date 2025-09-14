@@ -1,18 +1,22 @@
+import DropdownSelect from "@/components/DropdownSelect";
+
 type Props = {
   value?: string;
   onChange?: (v: string) => void;
 };
 
 export default function ModelSelector({ value, onChange }: Props) {
+  const options = [
+    { label: "mistral-large-latest", value: "mistral-large-latest" },
+    { label: "mistral-small-latest", value: "mistral-small-latest" },
+  ];
+
   return (
-    <select
-      className="border rounded px-2 py-1 text-sm"
+    <DropdownSelect
+      options={options}
       value={value}
-      onChange={(e) => onChange?.(e.target.value)}
-      aria-label="Model selector"
-    >
-      <option value="mistral-large-latest">mistral-large-latest</option>
-      <option value="mistral-small-latest">mistral-small-latest</option>
-    </select>
+      onChange={onChange}
+      ariaLabel="Model selector"
+    />
   );
 }

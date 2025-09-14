@@ -1,11 +1,17 @@
 import { describe, it, expect } from "vitest";
+import type { NextRequest } from "next/server";
 import { POST } from "../../src/app/api/chat/route";
+
+type SSEChunk =
+  | { type: "meta"; t0: number; mock: boolean }
+  | { type: "delta"; content: string }
+  | { type: "final"; usage?: { prompt?: number; completion?: number } };
 
 async function readSSEChunks(res: Response) {
   const reader = res.body!.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
-  const chunks: any[] = [];
+  const chunks: SSEChunk[] = [];
   while (true) {
     const { done, value } = await reader.read();
     if (done) break;
@@ -40,7 +46,7 @@ describe("/api/chat (MOCK=1)", () => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
-    const res = await POST(req as any);
+    const res = await POST(req as unknown as NextRequest);
     expect(res.status).toBe(200);
     expect(res.headers.get("content-type") || "").toContain("text/event-stream");
     const chunks = await readSSEChunks(res);

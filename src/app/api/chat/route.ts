@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
   const validMessages = [] as Array<ReturnType<typeof MessageSchema.parse>>;
   try {
     for (const m of messages) validMessages.push(MessageSchema.parse(m));
-  } catch (e) {
+  } catch {
     return new Response("Invalid messages", { status: 400 });
   }
 
@@ -105,9 +105,9 @@ export async function POST(req: NextRequest) {
             messages: upstreamMessages,
           });
 
-          for await (const chunk of result as any) {
+          for await (const chunk of result) {
             if (aborted) break;
-            const data = (chunk as any).data;
+            const data = chunk.data;
             const choice = data?.choices?.[0];
             const content: unknown =
               choice?.delta?.content ??
@@ -132,7 +132,7 @@ export async function POST(req: NextRequest) {
         if (lastUsage) send(controller, { type: "final", usage: lastUsage });
         else send(controller, { type: "final" });
         controller.close();
-      } catch (err) {
+      } catch {
         // Best-effort graceful close
         try {
           send(controller, { type: "final" });
