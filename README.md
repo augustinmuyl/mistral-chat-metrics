@@ -6,6 +6,20 @@
 - Model selector, system preset selector, local chat history, and a robust mock mode for development and testing.
 - Built with Next.js (App Router, TypeScript), Tailwind v4, Vitest.
 
+## Demo
+
+> Add a short GIF or screenshot showing streaming + metrics updating.
+
+## Features
+
+- 🔄 Streaming chat with token-by-token reveal
+- 📊 Metrics sidebar: latency, duration, request/response KB, token usage
+- 🧩 Model selector and system preset selector
+- 💾 Local chat history (persists across reloads)
+- 🧪 Mock mode (deterministic responses, no API key required)
+- 🛠️ Easy testing: Vitest unit + integration tests, curlable SSE API
+- ⌨️ Abort support (Esc/Stop) and resilient error handling
+
 ## Requirements
 
 - Node.js 18+ (recommended: LTS 18 or 20)
@@ -91,7 +105,24 @@
 
   In mock mode you will see a short, deterministic sequence ending with `final`.
 
-## Project Structure
+## Architecture
+
+```
+[User Input] → [Next.js API /api/chat] → [Mistral SDK] → [Mistral API]
+      ↑                                           ↓
+   UI updates  ← stream of { meta | delta | final } events (SSE)
+```
+
+- Normalized streaming contract: `meta` (first) → one or more `delta` → `final` (last)
+  - `meta`: `{ t0, mock }` marks stream start and mock/live mode
+  - `delta`: `{ content }` token-like text chunks
+  - `final`: `{ usage?: { prompt, completion } }` if usage is available
+- Presets: when provided, injected server-side as a system message.
+- Mock mode: `MOCK=1` returns deterministic chunks for fast, keyless dev and stable tests.
+- Abort: client abort signal is wired through to the server route and upstream SDK.
+- Runtime: Node for compatibility with the official SDK.
+
+## Repository Conventions
 
 - `src/app/api/chat/route.ts`: Server route that normalizes upstream streaming into `meta`/`delta`/`final`. Uses `@mistralai/mistralai` when `MISTRAL_API_KEY` is set; otherwise returns `final` or mock chunks if `MOCK=1`.
 - `src/lib/*`: Typed schemas, metrics utilities, streaming client, local mocks, and localStorage helpers.
@@ -141,10 +172,24 @@ This project is designed to be easy to test locally and in CI.
 
 - Manual API testing with SSE via curl is shown in the API section above.
 
+## Development Workflow
+
+- Lint and format locally: `npm run lint && npm run format`
+- Run tests in watch mode: `npx vitest -w`
+- Offline dev: set `MOCK=1` in your environment to avoid external calls
+- Optional: Add a pre-push hook (e.g., Husky) to run lint + tests
+
 ## Environment Variables
 
 - `MISTRAL_API_KEY`: Your Mistral key for live requests; leave unset to avoid calling the API.
 - `MOCK`: `1` enables local mock streaming; `0` (or unset) disables.
+
+## Future Improvements
+
+- Compare mode to run multiple models side-by-side
+- Document uploads with lightweight retrieval-augmented chat
+- Simple evaluation dashboard (thumbs up/down, export CSV)
+- Containerization via Docker and docker-compose for one-command setup
 
 ## Limitations
 
@@ -157,6 +202,11 @@ This project is designed to be easy to test locally and in CI.
 - Getting an immediate `final` with no `delta`: ensure `MISTRAL_API_KEY` is set for live mode, or enable `MOCK=1` for mock streaming.
 - Caught by CORS when calling `/api/chat` directly from another origin: use the provided UI or proxy requests through the same Next.js app.
 - Types or ESLint errors: run `npm run lint` and `npm run format`.
+
+## Acknowledgments
+
+- [Mistral AI SDK](https://docs.mistral.ai)
+- [shadcn/ui](https://ui.shadcn.com) for composable primitives
 
 ## License
 
