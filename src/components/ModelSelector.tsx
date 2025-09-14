@@ -11,10 +11,8 @@ export default function ModelSelector({ value, onChange }: Props) {
       onChange={(e) => onChange?.(e.target.value)}
       aria-label="Model selector"
     >
-      <option value="mistral-small">mistral-small</option>
-      <option value="mistral-medium">mistral-medium</option>
-      <option value="mistral-large">mistral-large</option>
+      <option value="mistral-large-latest">mistral-large-latest</option>
+      <option value="mistral-small-latest">mistral-small-latest</option>
     </select>
   );
 }
-

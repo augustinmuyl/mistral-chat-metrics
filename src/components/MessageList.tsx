@@ -1,4 +1,5 @@
 import React from "react";
+import ReactMarkdown from "react-markdown";
 
 export type ChatMessage = {
   id: string;
@@ -23,10 +24,17 @@ export default function MessageList({ messages }: Props) {
           }
         >
           <div className="text-xs opacity-60 mb-1">{m.role}</div>
-          <div className="whitespace-pre-wrap">{m.content}</div>
+          {m.role === "assistant" ? (
+            <div className="prose prose-sm max-w-none dark:prose-invert">
+              <ReactMarkdown>
+                {m.content}
+              </ReactMarkdown>
+            </div>
+          ) : (
+            <div className="whitespace-pre-wrap">{m.content}</div>
+          )}
         </div>
       ))}
     </div>
   );
 }
-

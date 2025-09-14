@@ -1,103 +1,203 @@
-import Image from "next/image";
+"use client";
+
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Topbar from "@/components/Topbar";
+import MessageList from "@/components/MessageList";
+import ChatComposer from "@/components/ChatComposer";
+import SidebarMetrics from "@/components/SidebarMetrics";
+import EmptyState from "@/components/EmptyState";
+import type { Message } from "@/lib/schemas";
+import { streamChat, type StreamController } from "@/lib/streaming";
+import {
+  accumulateResponseBytes,
+  bytesToKB,
+  byteLengthOfString,
+  computeDurationMs,
+  computeLatencyMs,
+  jsonByteLength,
+} from "@/lib/metrics";
+import { saveConversation, loadConversations } from "@/lib/storage";
+
+function newId() {
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+}
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [currentModel, setCurrentModel] = useState("mistral-large-latest");
+  const [currentPreset, setCurrentPreset] = useState("general");
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [mockEnabled, setMockEnabled] = useState<boolean | undefined>(undefined);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+  const [latencyMs, setLatencyMs] = useState<number | undefined>();
+  const [durationMs, setDurationMs] = useState<number | undefined>();
+  const [reqKB, setReqKB] = useState<number | undefined>();
+  const [respKB, setRespKB] = useState<number | undefined>();
+  const [tokens, setTokens] = useState<number | undefined>();
+
+  const streamRef = useRef<StreamController | null>(null);
+  const t0Ref = useRef<number>(0);
+  const firstDeltaAtRef = useRef<number | null>(null);
+  const responseBytesRef = useRef<number>(0);
+  const convIdRef = useRef<string>(newId());
+  const assistantContentRef = useRef<string>("");
+
+  // Restore last conversation title or ignore for V1
+  useEffect(() => {
+    loadConversations();
+  }, []);
+
+  const onStop = useCallback(() => {
+    streamRef.current?.abort();
+    setIsStreaming(false);
+  }, []);
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape" && isStreaming) {
+        onStop();
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [isStreaming, onStop]);
+
+  const onSend = useCallback(
+    (text: string) => {
+      if (isStreaming) return;
+      const userMsg: Message = {
+        id: newId(),
+        role: "user",
+        content: text,
+        model: currentModel,
+        preset: currentPreset,
+      };
+      const nextMessages: Message[] = [...messages, userMsg];
+      setMessages(nextMessages);
+
+      // Begin streaming
+      setIsStreaming(true);
+      t0Ref.current = Date.now();
+      firstDeltaAtRef.current = null;
+      responseBytesRef.current = 0;
+      setLatencyMs(undefined);
+      setDurationMs(undefined);
+      setTokens(undefined);
+
+      const body = {
+        model: currentModel,
+        messages: nextMessages,
+        stream: true,
+        preset: currentPreset,
+      };
+      setReqKB(bytesToKB(jsonByteLength(body)));
+
+      let assistantId = newId();
+      setMessages((prev) => [
+        ...prev,
+        { id: assistantId, role: "assistant", content: "" },
+      ]);
+      assistantContentRef.current = "";
+
+      const controller = streamChat(body, {
+        onMeta: (meta) => {
+          setMockEnabled(meta.mock);
+          // Prefer server t0, but use local if missing
+          t0Ref.current = meta.t0 || t0Ref.current;
+        },
+        onDelta: (delta) => {
+          const now = Date.now();
+          if (firstDeltaAtRef.current == null) {
+            firstDeltaAtRef.current = now;
+            setLatencyMs(computeLatencyMs(t0Ref.current, now));
+          }
+          responseBytesRef.current = accumulateResponseBytes(
+            responseBytesRef.current,
+            byteLengthOfString(delta.content),
+          );
+          setRespKB(bytesToKB(responseBytesRef.current));
+          assistantContentRef.current += delta.content;
+          setMessages((prev) => {
+            return prev.map((m) =>
+              m.id === assistantId
+                ? { ...m, content: m.content + delta.content }
+                : m,
+            );
+          });
+        },
+        onFinal: (final) => {
+          const now = Date.now();
+          setDurationMs(computeDurationMs(t0Ref.current, now));
+          const t =
+            (final.usage?.prompt ?? 0) + (final.usage?.completion ?? 0);
+          if (t > 0) setTokens(t);
+          setIsStreaming(false);
+
+          // Persist conversation
+          const title = nextMessages[0]?.content?.slice(0, 60) || "Conversation";
+          const convo = {
+            id: convIdRef.current,
+            title,
+            messages: [
+              ...nextMessages,
+              { id: assistantId, role: "assistant", content: assistantContentRef.current },
+            ].map(({ id, role, content }) => ({ id, role, content })),
+            model: currentModel,
+            preset: currentPreset,
+          };
+          saveConversation(convo);
+        },
+        onError: () => {
+          setIsStreaming(false);
+        },
+        onClose: () => {
+          // no-op
+        },
+      });
+      streamRef.current = controller;
+    },
+    [currentModel, currentPreset, isStreaming, messages],
+  );
+
+  const onClearHistory = useCallback(() => {
+    if (typeof window !== "undefined") {
+      try {
+        window.localStorage.removeItem("mistral.chat.conversations");
+      } catch {}
+    }
+  }, []);
+
+  const hasMessages = messages.length > 0;
+
+  return (
+    <div className="min-h-screen flex flex-col">
+      <Topbar
+        model={currentModel}
+        onModelChange={setCurrentModel}
+        preset={currentPreset}
+        onPresetChange={setCurrentPreset}
+        mockEnabled={mockEnabled}
+        onClearHistory={onClearHistory}
+      />
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-[1fr_20rem] max-w-5xl mx-auto w-full gap-0">
+        <main className="px-4 py-4 flex flex-col gap-4">
+          {hasMessages ? (
+            <MessageList messages={messages} />
+          ) : (
+            <EmptyState />
+          )}
+          <ChatComposer disabled={isStreaming} onSend={onSend} onStop={onStop} />
+        </main>
+        <SidebarMetrics
+          latencyMs={latencyMs}
+          durationMs={durationMs}
+          reqKB={reqKB}
+          respKB={respKB}
+          model={currentModel}
+          preset={currentPreset}
+          tokens={tokens}
+        />
+      </div>
     </div>
   );
 }
