@@ -11,6 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Menu as MenuIcon } from "lucide-react";
+import ConversationsSelect from "./ConversationsSelect";
 
 type Props = {
   model: string;
@@ -18,7 +19,10 @@ type Props = {
   preset: string;
   onPresetChange: (v: string) => void;
   mockEnabled?: boolean;
-  onClearHistory?: () => void;
+  currentConversationId?: string;
+  conversations?: Array<{ id: string; title?: string }>;
+  onSelectConversation?: (id: string) => void;
+  onNewChat?: () => void;
 };
 
 export default function Topbar({
@@ -27,7 +31,10 @@ export default function Topbar({
   preset,
   onPresetChange,
   mockEnabled,
-  onClearHistory,
+  currentConversationId,
+  conversations = [],
+  onSelectConversation,
+  onNewChat,
 }: Props) {
   return (
     <div className="w-full flex items-center justify-between gap-3 py-3 px-4 border-b">
@@ -42,14 +49,19 @@ export default function Topbar({
             Mock mode
           </span>
         ) : null}
+        <ConversationsSelect
+          value={currentConversationId}
+          conversations={conversations}
+          onChange={onSelectConversation}
+        />
         <ModelSelector value={model} onChange={onModelChange} />
         <SystemPresetSelect value={preset} onChange={onPresetChange} />
         <button
           className="border rounded px-3 py-1 text-sm"
-          onClick={onClearHistory}
-          aria-label="Clear history"
+          onClick={onNewChat}
+          aria-label="New chat"
         >
-          Clear chat
+          New chat
         </button>
       </div>
 
@@ -70,6 +82,29 @@ export default function Topbar({
               </div>
             ) : null}
             {mockEnabled ? <DropdownMenuSeparator /> : null}
+
+            {/* Conversations */}
+            <div className="px-2 py-1.5 text-xs text-muted-foreground">
+              Conversations
+            </div>
+            <DropdownMenuRadioGroup
+              value={currentConversationId ?? ""}
+              onValueChange={(v) => onSelectConversation?.(v)}
+            >
+              {conversations.length === 0 ? (
+                <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                  No conversations yet
+                </div>
+              ) : (
+                conversations.map((c) => (
+                  <DropdownMenuRadioItem key={c.id} value={c.id}>
+                    {c.title || c.id}
+                  </DropdownMenuRadioItem>
+                ))
+              )}
+            </DropdownMenuRadioGroup>
+
+            <DropdownMenuSeparator />
 
             {/* Model selection */}
             <div className="px-2 py-1.5 text-xs text-muted-foreground">
@@ -112,11 +147,11 @@ export default function Topbar({
             <DropdownMenuSeparator />
 
             <DropdownMenuItem
-              onClick={onClearHistory}
+              onClick={onNewChat}
               className="cursor-pointer"
-              aria-label="Clear history"
+              aria-label="New chat"
             >
-              Clear chat
+              New chat
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

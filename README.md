@@ -15,7 +15,7 @@
 - 🔄 Streaming chat with token-by-token reveal
 - 📊 Metrics sidebar: latency, duration, request/response KB, token usage
 - 🧩 Model selector and system preset selector
-- 💾 Local chat history (persists across reloads)
+- 💾 Local chat history with conversation switching (persists across reloads)
 - 🧪 Mock mode (deterministic responses, no API key required)
 - 🛠️ Easy testing: Vitest unit + integration tests, curlable SSE API
 - ⌨️ Abort support (Esc/Stop) and resilient error handling
@@ -57,7 +57,9 @@
 - Type a prompt and press Enter to stream a response.
 - Switch the model and preset from the top bar (or mobile menu).
 - The sidebar shows metrics in real time: latency to first token, total duration, and request/response sizes in KB; tokens appear if the upstream response includes usage.
-- Press Esc or click Stop to abort a stream. Use “Clear chat” to reset the current conversation.
+- Press Esc or click Stop to abort a stream. Use “New chat” to start a fresh conversation without deleting previous ones.
+- On reload, you land on the initial screen; conversations are loaded and can be opened from the Conversations menu.
+- Conversation titles are auto-generated from the first message (sanitized and truncated) to remain readable.
 
 ## Mock Mode
 

@@ -18,6 +18,7 @@ type Props = {
   value?: string;
   onChange?: (v: string) => void;
   placeholder?: string;
+  triggerLabel?: string;
   ariaLabel?: string;
   className?: string;
   contentClassName?: string;
@@ -29,6 +30,7 @@ export default function DropdownSelect({
   value,
   onChange,
   placeholder = "Select...",
+  triggerLabel,
   ariaLabel,
   className,
   contentClassName,
@@ -50,7 +52,7 @@ export default function DropdownSelect({
           className,
         )}
       >
-        <span className="truncate max-w-[16rem]">{selectedLabel}</span>
+        <span className="truncate max-w-[16rem]">{triggerLabel ?? selectedLabel}</span>
         <ChevronDownIcon className="size-4 opacity-70" />
       </DropdownMenuTrigger>
       <DropdownMenuContent className={cn("min-w-[12rem]", contentClassName)}>

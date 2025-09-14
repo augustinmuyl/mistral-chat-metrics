@@ -17,11 +17,12 @@ import {
   computeLatencyMs,
   jsonByteLength,
 } from "@/lib/metrics";
+import { deriveTitle } from "@/lib/utils";
 import {
   saveConversation,
   loadConversations,
-  clearConversation,
 } from "@/lib/storage";
+import type { Conversation } from "@/lib/storage";
 
 function newId() {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
@@ -48,10 +49,15 @@ export default function Home() {
   const responseBytesRef = useRef<number>(0);
   const convIdRef = useRef<string>(newId());
   const assistantContentRef = useRef<string>("");
+  const [conversationList, setConversationList] = useState<Conversation[]>([]);
 
-  // Restore last conversation title or ignore for V1
+  // On load: populate conversations list but start on an empty screen
   useEffect(() => {
-    loadConversations();
+    try {
+      const list = loadConversations();
+      setConversationList(Array.isArray(list) ? list : []);
+      // Do not auto-open a conversation; keep defaults and empty messages
+    } catch { }
   }, []);
 
   const onStop = useCallback(() => {
@@ -141,8 +147,7 @@ export default function Home() {
           setIsStreaming(false);
 
           // Persist conversation
-          const title =
-            nextMessages[0]?.content?.slice(0, 60) || "Conversation";
+          const title = deriveTitle(nextMessages[0]?.content || "", 60) || "Conversation";
           const convo = {
             id: convIdRef.current,
             title,
@@ -158,6 +163,10 @@ export default function Home() {
             preset: currentPreset,
           };
           saveConversation(convo);
+          try {
+            const updated = loadConversations();
+            setConversationList(Array.isArray(updated) ? updated : []);
+          } catch { }
         },
         onError: () => {
           setIsStreaming(false);
@@ -171,11 +180,8 @@ export default function Home() {
     [currentModel, currentPreset, isStreaming, messages],
   );
 
-  const onClearHistory = useCallback(() => {
+  const onNewChat = useCallback(() => {
     if (isStreaming) onStop();
-    try {
-      clearConversation(convIdRef.current);
-    } catch {}
     setMessages([]);
     setLatencyMs(undefined);
     setDurationMs(undefined);
@@ -184,6 +190,32 @@ export default function Home() {
     setTokens(undefined);
     assistantContentRef.current = "";
     convIdRef.current = newId();
+  }, [isStreaming, onStop]);
+
+  const onSelectConversation = useCallback((id: string) => {
+    if (isStreaming) onStop();
+    try {
+      const list = loadConversations();
+      setConversationList(Array.isArray(list) ? list : []);
+      const target = Array.isArray(list) ? list.find((c) => c.id === id) : null;
+      if (!target) return;
+      convIdRef.current = target.id;
+      if (target.model) setCurrentModel(target.model);
+      if (target.preset) setCurrentPreset(target.preset);
+      if (Array.isArray(target.messages)) {
+        setMessages(
+          target.messages.map((m) => ({ id: m.id, role: m.role, content: m.content })) as Message[],
+        );
+      } else {
+        setMessages([]);
+      }
+      setLatencyMs(undefined);
+      setDurationMs(undefined);
+      setReqKB(undefined);
+      setRespKB(undefined);
+      setTokens(undefined);
+      assistantContentRef.current = "";
+    } catch { }
   }, [isStreaming, onStop]);
 
   const hasMessages = messages.length > 0;
@@ -196,7 +228,10 @@ export default function Home() {
         preset={currentPreset}
         onPresetChange={setCurrentPreset}
         mockEnabled={mockEnabled}
-        onClearHistory={onClearHistory}
+        currentConversationId={convIdRef.current}
+        conversations={conversationList}
+        onSelectConversation={onSelectConversation}
+        onNewChat={onNewChat}
       />
       {hasMessages ? (
         <motion.div
