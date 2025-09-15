@@ -57,6 +57,7 @@ export default function Home() {
         mockEnabled={mockEnabled}
         currentConversationId={currentConversationId}
         conversations={conversationList}
+        canOpenMetrics={hasMessages}
         onSelectConversation={(id) => {
           setMetricsOpen(false);
           onSelectConversation(id);
