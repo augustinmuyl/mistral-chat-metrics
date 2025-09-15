@@ -63,7 +63,7 @@ export default function Topbar({
 }: Props) {
   const canDelete = Boolean(
     currentConversationId &&
-    conversations?.some((c) => c.id === currentConversationId),
+      conversations?.some((c) => c.id === currentConversationId),
   );
   return (
     <div className="w-full flex items-center justify-between gap-3 py-3 px-4 border-b">
@@ -92,19 +92,24 @@ export default function Topbar({
                     </button>
                   </AlertDialogTrigger>
                 </TooltipTrigger>
-                <TooltipContent side="bottom">Delete conversation</TooltipContent>
+                <TooltipContent side="bottom">
+                  Delete conversation
+                </TooltipContent>
               </Tooltip>
             </TooltipProvider>
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>Delete this conversation?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  This action cannot be undone. The conversation will be removed from your browser’s storage.
+                  This action cannot be undone. The conversation will be removed
+                  from your browser’s storage.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={onDeleteConversation}>Delete</AlertDialogAction>
+                <AlertDialogAction onClick={onDeleteConversation}>
+                  Delete
+                </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
@@ -253,14 +258,19 @@ export default function Topbar({
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Delete this conversation?</AlertDialogTitle>
+                    <AlertDialogTitle>
+                      Delete this conversation?
+                    </AlertDialogTitle>
                     <AlertDialogDescription>
-                      This action cannot be undone. The conversation will be removed from your browser’s storage.
+                      This action cannot be undone. The conversation will be
+                      removed from your browser’s storage.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={onDeleteConversation}>Delete</AlertDialogAction>
+                    <AlertDialogAction onClick={onDeleteConversation}>
+                      Delete
+                    </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>

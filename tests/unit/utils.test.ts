@@ -23,4 +23,3 @@ describe("deriveTitle", () => {
     expect(title.length).toBeGreaterThan(0);
   });
 });
-

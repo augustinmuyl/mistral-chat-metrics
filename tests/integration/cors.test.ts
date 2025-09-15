@@ -75,4 +75,3 @@ describe("origin lock", () => {
     expect(res.status).toBe(403);
   });
 });
-

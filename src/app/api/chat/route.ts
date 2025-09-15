@@ -149,8 +149,12 @@ export async function POST(req: NextRequest) {
           // helper to extract plain text from possible content shapes
           type TextContentChunk = Extract<ContentChunk, { type: "text" }>;
           const isTextChunk = (c: ContentChunk): c is TextContentChunk =>
-            c && typeof c === "object" && "type" in c && (c as { type?: unknown }).type === "text" &&
-            "text" in c && typeof (c as { text?: unknown }).text === "string";
+            c &&
+            typeof c === "object" &&
+            "type" in c &&
+            (c as { type?: unknown }).type === "text" &&
+            "text" in c &&
+            typeof (c as { text?: unknown }).text === "string";
 
           for await (const chunk of result) {
             if (aborted) break;
@@ -161,7 +165,10 @@ export async function POST(req: NextRequest) {
             if (typeof deltaContent === "string") {
               content = deltaContent;
             } else if (Array.isArray(deltaContent)) {
-              content = deltaContent.filter(isTextChunk).map((c) => c.text).join("");
+              content = deltaContent
+                .filter(isTextChunk)
+                .map((c) => c.text)
+                .join("");
             }
             if (typeof content === "string" && content.length > 0) {
               send(controller, { type: "delta", content });

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { motion } from "motion/react";
 import Topbar from "@/components/Topbar";
 import MessageList from "@/components/MessageList";
@@ -17,237 +17,33 @@ import {
   DrawerClose,
 } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
-import type { Message } from "@/lib/schemas";
-import { streamChat, type StreamController } from "@/lib/streaming";
-import {
-  accumulateResponseBytes,
-  bytesToKB,
-  computeDurationMs,
-  computeLatencyMs,
-  jsonByteLength,
-} from "@/lib/metrics";
-import { deriveTitle } from "@/lib/utils";
-import {
-  saveConversation,
-  loadConversations,
-  clearConversation,
-} from "@/lib/storage";
-import type { Conversation } from "@/lib/storage";
-
-function newId() {
-  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-}
+import { useChatController } from "@/lib/hooks/useChatController";
 
 export default function Home() {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [currentModel, setCurrentModel] = useState("mistral-small-latest");
-  const [currentPreset, setCurrentPreset] = useState("general");
-  const [isStreaming, setIsStreaming] = useState(false);
-  const [mockEnabled, setMockEnabled] = useState<boolean | undefined>(
-    undefined,
-  );
   const [metricsOpen, setMetricsOpen] = useState(false);
 
-  const [latencyMs, setLatencyMs] = useState<number | undefined>();
-  const [durationMs, setDurationMs] = useState<number | undefined>();
-  const [reqKB, setReqKB] = useState<number | undefined>();
-  const [respKB, setRespKB] = useState<number | undefined>();
-  const [tokens, setTokens] = useState<number | undefined>();
-
-  const streamRef = useRef<StreamController | null>(null);
-  const t0Ref = useRef<number>(0);
-  const firstDeltaAtRef = useRef<number | null>(null);
-  const responseBytesRef = useRef<number>(0);
-  const convIdRef = useRef<string>(newId());
-  const assistantContentRef = useRef<string>("");
-  const [conversationList, setConversationList] = useState<Conversation[]>([]);
-
-  // On load: populate conversations list but start on an empty screen
-  useEffect(() => {
-    try {
-      const list = loadConversations();
-      setConversationList(Array.isArray(list) ? list : []);
-      // Do not auto-open a conversation; keep defaults and empty messages
-    } catch { }
-  }, []);
-
-  const onStop = useCallback(() => {
-    streamRef.current?.abort();
-    setIsStreaming(false);
-  }, []);
-
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape" && isStreaming) {
-        onStop();
-      }
-    }
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [isStreaming, onStop]);
-
-  const onSend = useCallback(
-    (text: string) => {
-      if (isStreaming) return;
-      const userMsg: Message = {
-        id: newId(),
-        role: "user",
-        content: text,
-        model: currentModel,
-        preset: currentPreset,
-      };
-      const nextMessages: Message[] = [...messages, userMsg];
-      setMessages(nextMessages);
-
-      // Begin streaming
-      setIsStreaming(true);
-      t0Ref.current = Date.now();
-      firstDeltaAtRef.current = null;
-      responseBytesRef.current = 0;
-      setLatencyMs(undefined);
-      setDurationMs(undefined);
-      setTokens(undefined);
-
-      const body = {
-        model: currentModel,
-        messages: nextMessages,
-        stream: true,
-        preset: currentPreset,
-      };
-      setReqKB(bytesToKB(jsonByteLength(body)));
-
-      const assistantId = newId();
-      setMessages((prev) => [
-        ...prev,
-        { id: assistantId, role: "assistant", content: "" },
-      ]);
-      assistantContentRef.current = "";
-
-      const controller = streamChat(body, {
-        onMeta: (meta) => {
-          setMockEnabled(meta.mock);
-          // Prefer server t0, but use local if missing
-          t0Ref.current = meta.t0 || t0Ref.current;
-        },
-        onDelta: (delta) => {
-          const now = Date.now();
-          if (firstDeltaAtRef.current == null) {
-            firstDeltaAtRef.current = now;
-            setLatencyMs(computeLatencyMs(t0Ref.current, now));
-          }
-          responseBytesRef.current = accumulateResponseBytes(
-            responseBytesRef.current,
-            // Pass the raw string so the helper can measure bytes
-            delta.content,
-          );
-          setRespKB(bytesToKB(responseBytesRef.current));
-          assistantContentRef.current += delta.content;
-          setMessages((prev) => {
-            return prev.map((m) =>
-              m.id === assistantId
-                ? { ...m, content: m.content + delta.content }
-                : m,
-            );
-          });
-        },
-        onFinal: (final) => {
-          const now = Date.now();
-          setDurationMs(computeDurationMs(t0Ref.current, now));
-          const t = (final.usage?.prompt ?? 0) + (final.usage?.completion ?? 0);
-          if (t > 0) setTokens(t);
-          setIsStreaming(false);
-
-          // Persist conversation
-          const title = deriveTitle(nextMessages[0]?.content || "", 60) || "Conversation";
-          const mappedPrev: Conversation["messages"] = nextMessages.map(({ id, role, content }: Message) => ({ id, role, content })) as Conversation["messages"];
-          const convo: Conversation = {
-            id: convIdRef.current,
-            title,
-            messages: [
-              ...mappedPrev,
-              { id: assistantId, role: "assistant", content: assistantContentRef.current },
-            ],
-            model: currentModel,
-            preset: currentPreset,
-          };
-          saveConversation(convo);
-          try {
-            const updated = loadConversations();
-            setConversationList(Array.isArray(updated) ? updated : []);
-          } catch { }
-        },
-        onError: () => {
-          setIsStreaming(false);
-        },
-        onClose: () => {
-          // no-op
-        },
-      });
-      streamRef.current = controller;
-    },
-    [currentModel, currentPreset, isStreaming, messages],
-  );
-
-  const onNewChat = useCallback(() => {
-    if (isStreaming) onStop();
-    setMessages([]);
-    setLatencyMs(undefined);
-    setDurationMs(undefined);
-    setReqKB(undefined);
-    setRespKB(undefined);
-    setTokens(undefined);
-    assistantContentRef.current = "";
-    convIdRef.current = newId();
-    setMetricsOpen(false);
-  }, [isStreaming, onStop]);
-
-  const onSelectConversation = useCallback((id: string) => {
-    if (isStreaming) onStop();
-    try {
-      const list = loadConversations();
-      setConversationList(Array.isArray(list) ? list : []);
-      const target = Array.isArray(list) ? list.find((c) => c.id === id) : null;
-      if (!target) return;
-      convIdRef.current = target.id;
-      if (target.model) setCurrentModel(target.model);
-      if (target.preset) setCurrentPreset(target.preset);
-      setMetricsOpen(false);
-      if (Array.isArray(target.messages)) {
-        setMessages(
-          target.messages.map((m) => ({ id: m.id, role: m.role, content: m.content })) as Message[],
-        );
-      } else {
-        setMessages([]);
-      }
-      setLatencyMs(undefined);
-      setDurationMs(undefined);
-      setReqKB(undefined);
-      setRespKB(undefined);
-      setTokens(undefined);
-      assistantContentRef.current = "";
-    } catch { }
-  }, [isStreaming, onStop]);
-
-  const onDeleteConversation = useCallback(() => {
-    try {
-      const currentId = convIdRef.current;
-      if (!currentId) return;
-      // Remove from storage if it exists
-      clearConversation(currentId);
-      const list = loadConversations();
-      setConversationList(Array.isArray(list) ? list : []);
-    } catch { }
-    // Reset to a brand-new empty chat
-    setMessages([]);
-    setLatencyMs(undefined);
-    setDurationMs(undefined);
-    setReqKB(undefined);
-    setRespKB(undefined);
-    setTokens(undefined);
-    assistantContentRef.current = "";
-    convIdRef.current = newId();
-    setMetricsOpen(false);
-  }, []);
+  const {
+    messages,
+    currentModel,
+    setCurrentModel,
+    currentPreset,
+    setCurrentPreset,
+    isStreaming,
+    mockEnabled,
+    latencyMs,
+    durationMs,
+    reqKB,
+    respKB,
+    tokens,
+    conversationList,
+    currentConversationId,
+    onSend,
+    onStop,
+    onNewChat,
+    onSelectConversation,
+    onDeleteConversation,
+    onExportConversation,
+  } = useChatController();
 
   const hasMessages = messages.length > 0;
 
@@ -259,44 +55,19 @@ export default function Home() {
         preset={currentPreset}
         onPresetChange={setCurrentPreset}
         mockEnabled={mockEnabled}
-        currentConversationId={convIdRef.current}
+        currentConversationId={currentConversationId}
         conversations={conversationList}
-        onSelectConversation={onSelectConversation}
-        onNewChat={onNewChat}
-        onDeleteConversation={onDeleteConversation}
-        canOpenMetrics={hasMessages}
-        onOpenMetrics={() => setMetricsOpen(true)}
-        onExportConversation={() => {
-          try {
-            // Prefer the persisted conversation if present
-            const existing = conversationList.find(
-              (c) => c.id === convIdRef.current,
-            );
-            const convo = existing
-              ? existing
-              : {
-                id: convIdRef.current,
-                title:
-                  deriveTitle(messages[0]?.content || "", 60) ||
-                  "Conversation",
-                messages: messages.map(({ id, role, content }: Message) => ({ id, role, content })) as Conversation["messages"],
-                model: currentModel,
-                preset: currentPreset,
-              };
-
-            const blob = new Blob([JSON.stringify(convo, null, 2)], {
-              type: "application/json;charset=utf-8",
-            });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = `conversation-${convo.id}.json`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-          } catch { }
+        onSelectConversation={(id) => {
+          setMetricsOpen(false);
+          onSelectConversation(id);
         }}
+        onNewChat={() => {
+          onNewChat();
+          setMetricsOpen(false);
+        }}
+        onDeleteConversation={onDeleteConversation}
+        onOpenMetrics={() => setMetricsOpen(true)}
+        onExportConversation={onExportConversation}
       />
       {hasMessages ? (
         <motion.div
@@ -370,7 +141,11 @@ export default function Home() {
       )}
       {/* Mobile metrics drawer (only when in a conversation) */}
       {hasMessages ? (
-        <Drawer open={metricsOpen} onOpenChange={setMetricsOpen} direction="bottom">
+        <Drawer
+          open={metricsOpen}
+          onOpenChange={setMetricsOpen}
+          direction="bottom"
+        >
           <DrawerContent className="lg:hidden">
             <DrawerHeader>
               <DrawerTitle>Metrics</DrawerTitle>

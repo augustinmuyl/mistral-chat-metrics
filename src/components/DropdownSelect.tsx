@@ -52,7 +52,9 @@ export default function DropdownSelect({
           className,
         )}
       >
-        <span className="truncate max-w-[16rem]">{triggerLabel ?? selectedLabel}</span>
+        <span className="truncate max-w-[16rem]">
+          {triggerLabel ?? selectedLabel}
+        </span>
         <ChevronDownIcon className="size-4 opacity-70" />
       </DropdownMenuTrigger>
       <DropdownMenuContent className={cn("min-w-[12rem]", contentClassName)}>
