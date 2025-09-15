@@ -29,6 +29,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import ConversationsSelect from "./ConversationsSelect";
+import { useState } from "react";
 
 type Props = {
   model: string;
@@ -61,9 +62,11 @@ export default function Topbar({
   onOpenMetrics,
   canOpenMetrics,
 }: Props) {
+  // Control the mobile hamburger menu so we can close it after actions
+  const [menuOpen, setMenuOpen] = useState(false);
   const canDelete = Boolean(
     currentConversationId &&
-      conversations?.some((c) => c.id === currentConversationId),
+    conversations?.some((c) => c.id === currentConversationId),
   );
   return (
     <div className="w-full flex items-center justify-between gap-3 py-3 px-4 border-b">
@@ -150,7 +153,7 @@ export default function Topbar({
             <BarChart3 className="size-5" />
           </button>
         ) : null}
-        <DropdownMenu>
+        <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
           <DropdownMenuTrigger
             aria-label="Open menu"
             className="border rounded p-2 inline-flex items-center justify-center hover:cursor-pointer"
@@ -252,6 +255,7 @@ export default function Topbar({
                     className="cursor-pointer"
                     aria-label="Delete conversation"
                     variant="destructive"
+                    onSelect={(e) => e.preventDefault()}
                   >
                     Delete conversation
                   </DropdownMenuItem>
@@ -268,7 +272,12 @@ export default function Topbar({
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={onDeleteConversation}>
+                    <AlertDialogAction
+                      onClick={() => {
+                        onDeleteConversation?.();
+                        setMenuOpen(false);
+                      }}
+                    >
                       Delete
                     </AlertDialogAction>
                   </AlertDialogFooter>
