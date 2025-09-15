@@ -271,7 +271,9 @@ export default function Topbar({
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogCancel onClick={() => setMenuOpen(false)}>
+                      Cancel
+                    </AlertDialogCancel>
                     <AlertDialogAction
                       onClick={() => {
                         onDeleteConversation?.();
