@@ -8,7 +8,7 @@
 
 ## Demo
 
-**Streaming in action (Mock Mode):**
+**Streaming in action:**
 
 ![Streaming demo](public/demo.gif)
 
