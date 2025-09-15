@@ -257,7 +257,7 @@ export default function Home() {
       />
       {hasMessages ? (
         <motion.div
-          className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[1fr_20rem] max-w-5xl mx-auto w-full gap-0"
+          className="flex-1 min-h-0 grid grid-cols-1 grid-rows-[1fr_auto] lg:grid-rows-1 lg:grid-cols-[1fr_20rem] max-w-5xl mx-auto w-full gap-0"
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.25, ease: "easeOut" }}

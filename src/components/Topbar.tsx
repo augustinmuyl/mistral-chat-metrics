@@ -128,7 +128,7 @@ export default function Topbar({
           >
             <MenuIcon className="size-5" />
           </DropdownMenuTrigger>
-          <DropdownMenuContent className="min-w-[14rem]">
+          <DropdownMenuContent className="min-w-[14rem] sm:hidden">
             <DropdownMenuLabel>Settings</DropdownMenuLabel>
             {mockEnabled ? (
               <div className="px-2 py-1.5 text-xs text-amber-900 bg-amber-50 rounded">
