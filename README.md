@@ -8,7 +8,9 @@
 
 ## Demo
 
-> Add a short GIF or screenshot showing streaming + metrics updating.
+**Streaming in action (Mock Mode):**
+
+![Streaming demo](public/demo.gif)
 
 ## Features
 
