@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { MessageSchema } from "@/lib/schemas";
 import { mockChunks } from "@/lib/mocks";
 import { Mistral } from "@mistralai/mistralai";
+import type { ContentChunk } from "@mistralai/mistralai/models/components";
 
 export const runtime = "nodejs";
 
@@ -145,22 +146,31 @@ export async function POST(req: NextRequest) {
             messages: upstreamMessages,
           });
 
+          // helper to extract plain text from possible content shapes
+          type TextContentChunk = Extract<ContentChunk, { type: "text" }>;
+          const isTextChunk = (c: ContentChunk): c is TextContentChunk =>
+            c && typeof c === "object" && "type" in c && (c as { type?: unknown }).type === "text" &&
+            "text" in c && typeof (c as { text?: unknown }).text === "string";
+
           for await (const chunk of result) {
             if (aborted) break;
             const data = chunk.data;
             const choice = data?.choices?.[0];
-            const content: unknown =
-              choice?.delta?.content ??
-              choice?.message?.content ??
-              data?.content;
+            let content: unknown;
+            const deltaContent = choice?.delta?.content;
+            if (typeof deltaContent === "string") {
+              content = deltaContent;
+            } else if (Array.isArray(deltaContent)) {
+              content = deltaContent.filter(isTextChunk).map((c) => c.text).join("");
+            }
             if (typeof content === "string" && content.length > 0) {
               send(controller, { type: "delta", content });
             }
             const usage = data?.usage;
-            if (usage && (usage.prompt_tokens || usage.completion_tokens)) {
+            if (usage && (usage.promptTokens || usage.completionTokens)) {
               lastUsage = {
-                prompt: usage.prompt_tokens,
-                completion: usage.completion_tokens,
+                prompt: usage.promptTokens,
+                completion: usage.completionTokens,
               };
             }
           }

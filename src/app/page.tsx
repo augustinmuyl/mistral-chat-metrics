@@ -149,17 +149,14 @@ export default function Home() {
 
           // Persist conversation
           const title = deriveTitle(nextMessages[0]?.content || "", 60) || "Conversation";
-          const convo = {
+          const mappedPrev: Conversation["messages"] = nextMessages.map(({ id, role, content }: Message) => ({ id, role, content })) as Conversation["messages"]; 
+          const convo: Conversation = {
             id: convIdRef.current,
             title,
             messages: [
-              ...nextMessages,
-              {
-                id: assistantId,
-                role: "assistant",
-                content: assistantContentRef.current,
-              },
-            ].map(({ id, role, content }) => ({ id, role, content })),
+              ...mappedPrev,
+              { id: assistantId, role: "assistant", content: assistantContentRef.current },
+            ],
             model: currentModel,
             preset: currentPreset,
           };
@@ -267,11 +264,7 @@ export default function Home() {
                   title:
                     deriveTitle(messages[0]?.content || "", 60) ||
                     "Conversation",
-                  messages: messages.map(({ id, role, content }) => ({
-                    id,
-                    role,
-                    content,
-                  })),
+                  messages: messages.map(({ id, role, content }: Message) => ({ id, role, content })) as Conversation["messages"],
                   model: currentModel,
                   preset: currentPreset,
                 };

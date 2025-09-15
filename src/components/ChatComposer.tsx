@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Textarea } from "./ui/textarea";
 import { Button } from "./ui/button";
-import { ArrowBigUp, Send, Square } from "lucide-react";
+import { ArrowBigUp, Square } from "lucide-react";
 
 type Props = {
   disabled?: boolean;
