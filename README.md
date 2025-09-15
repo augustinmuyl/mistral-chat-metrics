@@ -61,6 +61,8 @@
 - On reload, you land on the initial screen; conversations are loaded and can be opened from the Conversations menu.
 - Conversation titles are auto-generated from the first message (sanitized and truncated) to remain readable.
 - Large inputs: the composer auto-grows up to a max height, then becomes scrollable so the layout stays stable when pasting long text.
+- Manage history: use the Conversations menu to switch; use New chat to start fresh; use Delete conversation to remove one.
+  - Deleting asks for confirmation via an alert dialog.
 
 ## Mock Mode
 

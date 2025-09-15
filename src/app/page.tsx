@@ -21,6 +21,7 @@ import { deriveTitle } from "@/lib/utils";
 import {
   saveConversation,
   loadConversations,
+  clearConversation,
 } from "@/lib/storage";
 import type { Conversation } from "@/lib/storage";
 
@@ -218,6 +219,26 @@ export default function Home() {
     } catch { }
   }, [isStreaming, onStop]);
 
+  const onDeleteConversation = useCallback(() => {
+    try {
+      const currentId = convIdRef.current;
+      if (!currentId) return;
+      // Remove from storage if it exists
+      clearConversation(currentId);
+      const list = loadConversations();
+      setConversationList(Array.isArray(list) ? list : []);
+    } catch {}
+    // Reset to a brand-new empty chat
+    setMessages([]);
+    setLatencyMs(undefined);
+    setDurationMs(undefined);
+    setReqKB(undefined);
+    setRespKB(undefined);
+    setTokens(undefined);
+    assistantContentRef.current = "";
+    convIdRef.current = newId();
+  }, []);
+
   const hasMessages = messages.length > 0;
 
   return (
@@ -232,6 +253,7 @@ export default function Home() {
         conversations={conversationList}
         onSelectConversation={onSelectConversation}
         onNewChat={onNewChat}
+        onDeleteConversation={onDeleteConversation}
       />
       {hasMessages ? (
         <motion.div

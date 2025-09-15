@@ -10,7 +10,24 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Menu as MenuIcon } from "lucide-react";
+import { Menu as MenuIcon, Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import ConversationsSelect from "./ConversationsSelect";
 
 type Props = {
@@ -23,6 +40,7 @@ type Props = {
   conversations?: Array<{ id: string; title?: string }>;
   onSelectConversation?: (id: string) => void;
   onNewChat?: () => void;
+  onDeleteConversation?: () => void;
 };
 
 export default function Topbar({
@@ -35,7 +53,12 @@ export default function Topbar({
   conversations = [],
   onSelectConversation,
   onNewChat,
+  onDeleteConversation,
 }: Props) {
+  const canDelete = Boolean(
+    currentConversationId &&
+    conversations?.some((c) => c.id === currentConversationId),
+  );
   return (
     <div className="w-full flex items-center justify-between gap-3 py-3 px-4 border-b">
       <div className="text-xs sm:text-sm md:text-base lg:text-lg font-semibold">
@@ -48,6 +71,37 @@ export default function Topbar({
           <span className="text-xs rounded bg-amber-100 text-amber-900 px-2 py-1">
             Mock mode
           </span>
+        ) : null}
+        {canDelete ? (
+          <AlertDialog>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <AlertDialogTrigger asChild>
+                    <button
+                      className="border rounded p-[6px] inline-flex items-center justify-center hover:cursor-pointer text-red-600"
+                      aria-label="Delete conversation"
+                    >
+                      <Trash2 className="size-4" />
+                    </button>
+                  </AlertDialogTrigger>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">Delete conversation</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete this conversation?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This action cannot be undone. The conversation will be removed from your browser’s storage.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={onDeleteConversation}>Delete</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         ) : null}
         <ConversationsSelect
           value={currentConversationId}
@@ -153,6 +207,31 @@ export default function Topbar({
             >
               New chat
             </DropdownMenuItem>
+            {canDelete ? (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <DropdownMenuItem
+                    className="cursor-pointer"
+                    aria-label="Delete conversation"
+                    variant="destructive"
+                  >
+                    Delete conversation
+                  </DropdownMenuItem>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete this conversation?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This action cannot be undone. The conversation will be removed from your browser’s storage.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={onDeleteConversation}>Delete</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            ) : null}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
