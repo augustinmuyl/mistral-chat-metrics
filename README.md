@@ -19,6 +19,7 @@
 - 🧪 Mock mode (deterministic responses, no API key required)
 - 🛠️ Easy testing: Vitest unit + integration tests, curlable SSE API
 - ⌨️ Abort support (Esc/Stop) and resilient error handling
+ - ⬇️ Export conversation as JSON
 
 ## Requirements
 
@@ -63,6 +64,7 @@
 - Large inputs: the composer auto-grows up to a max height, then becomes scrollable so the layout stays stable when pasting long text.
 - Manage history: use the Conversations menu to switch; use New chat to start fresh; use Delete conversation to remove one.
   - Deleting asks for confirmation via an alert dialog.
+ - Export: use “Export” to download the current conversation as a JSON file.
 
 ## Mock Mode
 

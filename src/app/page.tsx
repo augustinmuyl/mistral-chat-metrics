@@ -254,6 +254,41 @@ export default function Home() {
         onSelectConversation={onSelectConversation}
         onNewChat={onNewChat}
         onDeleteConversation={onDeleteConversation}
+        onExportConversation={() => {
+          try {
+            // Prefer the persisted conversation if present
+            const existing = conversationList.find(
+              (c) => c.id === convIdRef.current,
+            );
+            const convo = existing
+              ? existing
+              : {
+                  id: convIdRef.current,
+                  title:
+                    deriveTitle(messages[0]?.content || "", 60) ||
+                    "Conversation",
+                  messages: messages.map(({ id, role, content }) => ({
+                    id,
+                    role,
+                    content,
+                  })),
+                  model: currentModel,
+                  preset: currentPreset,
+                };
+
+            const blob = new Blob([JSON.stringify(convo, null, 2)], {
+              type: "application/json;charset=utf-8",
+            });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `conversation-${convo.id}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+          } catch {}
+        }}
       />
       {hasMessages ? (
         <motion.div

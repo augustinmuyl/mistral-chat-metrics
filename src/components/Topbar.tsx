@@ -41,6 +41,7 @@ type Props = {
   onSelectConversation?: (id: string) => void;
   onNewChat?: () => void;
   onDeleteConversation?: () => void;
+  onExportConversation?: () => void;
 };
 
 export default function Topbar({
@@ -54,6 +55,7 @@ export default function Topbar({
   onSelectConversation,
   onNewChat,
   onDeleteConversation,
+  onExportConversation,
 }: Props) {
   const canDelete = Boolean(
     currentConversationId &&
@@ -110,6 +112,15 @@ export default function Topbar({
         />
         <ModelSelector value={model} onChange={onModelChange} />
         <SystemPresetSelect value={preset} onChange={onPresetChange} />
+        {canDelete ? (
+          <button
+            className="border rounded px-3 py-1 text-sm hover:cursor-pointer"
+            onClick={onExportConversation}
+            aria-label="Export conversation"
+          >
+            Export
+          </button>
+        ) : null}
         <button
           className="border rounded px-3 py-1 text-sm hover:cursor-pointer"
           onClick={onNewChat}
@@ -207,6 +218,15 @@ export default function Topbar({
             >
               New chat
             </DropdownMenuItem>
+            {canDelete ? (
+              <DropdownMenuItem
+                onClick={onExportConversation}
+                className="cursor-pointer"
+                aria-label="Export conversation"
+              >
+                Export conversation
+              </DropdownMenuItem>
+            ) : null}
             {canDelete ? (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
