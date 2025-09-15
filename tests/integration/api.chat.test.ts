@@ -36,6 +36,7 @@ async function readSSEChunks(res: Response) {
 describe("/api/chat (MOCK=1)", () => {
   it("streams meta, delta(s), and final", async () => {
     process.env.MOCK = "1";
+    process.env.ALLOWED_ORIGIN = "http://localhost:3000";
     const body = {
       model: "mistral-large-latest",
       messages: [{ id: "u1", role: "user", content: "Hi" }],
@@ -43,7 +44,10 @@ describe("/api/chat (MOCK=1)", () => {
     };
     const req = new Request("http://localhost/api/chat", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        origin: "http://localhost:3000",
+      },
       body: JSON.stringify(body),
     });
     const res = await POST(req as unknown as NextRequest);

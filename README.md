@@ -19,7 +19,8 @@
 - 🧪 Mock mode (deterministic responses, no API key required)
 - 🛠️ Easy testing: Vitest unit + integration tests, curlable SSE API
 - ⌨️ Abort support (Esc/Stop) and resilient error handling
- - ⬇️ Export conversation as JSON
+- ⬇️ Export conversation as JSON
+ - 🔒 Origin lock (CORS) to reduce casual cross-site abuse
 
 ## Requirements
 
@@ -190,6 +191,7 @@ This project is designed to be easy to test locally and in CI.
 
 - `MISTRAL_API_KEY`: Your Mistral key for live requests; leave unset to avoid calling the API.
 - `MOCK`: `1` enables local mock streaming; `0` (or unset) disables.
+- `ALLOWED_ORIGIN`: Only accept requests from this origin. Defaults to `http://localhost:3000` in dev. For multiple domains, provide a comma-separated list.
 
 ## Future Improvements
 

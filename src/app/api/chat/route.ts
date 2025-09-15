@@ -14,6 +14,34 @@ type Body = {
 
 const encoder = new TextEncoder();
 
+// CORS / Origin lock helpers
+function parseAllowedOrigins(): string[] {
+  const raw = process.env.ALLOWED_ORIGIN || "http://localhost:3000";
+  return raw
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+function getRequestOrigin(req: NextRequest): string | null {
+  const origin = req.headers.get("origin");
+  if (origin) return origin;
+  const ref = req.headers.get("referer");
+  if (!ref) return null;
+  try {
+    return new URL(ref).origin;
+  } catch {
+    return null;
+  }
+}
+
+function matchAllowedOrigin(req: NextRequest): string | null {
+  const origins = parseAllowedOrigins();
+  const reqOrigin = getRequestOrigin(req);
+  if (!reqOrigin) return null;
+  return origins.find((o) => o === reqOrigin) || null;
+}
+
 function send(
   controller: ReadableStreamDefaultController<Uint8Array>,
   obj: unknown,
@@ -22,16 +50,28 @@ function send(
   controller.enqueue(encoder.encode(line));
 }
 
-function headers() {
-  return new Headers({
+function sseHeaders(allowedOrigin: string) {
+  const h = new Headers({
     "Content-Type": "text/event-stream; charset=utf-8",
     "Cache-Control": "no-cache, no-transform",
     Connection: "keep-alive",
     "X-Accel-Buffering": "no",
+    "Access-Control-Allow-Origin": allowedOrigin,
+    Vary: "Origin",
   });
+  return h;
 }
 
 export async function POST(req: NextRequest) {
+  // Enforce origin lock before any work
+  const allowed = matchAllowedOrigin(req);
+  if (!allowed) {
+    return new Response("Forbidden", {
+      status: 403,
+      headers: { Vary: "Origin" },
+    });
+  }
+
   const t0 = Date.now();
   let body: Body;
   try {
@@ -145,5 +185,23 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  return new Response(stream, { headers: headers() });
+  return new Response(stream, { headers: sseHeaders(allowed) });
+}
+
+export async function OPTIONS(req: NextRequest) {
+  const allowed = matchAllowedOrigin(req);
+  if (!allowed) {
+    return new Response("Forbidden", {
+      status: 403,
+      headers: { Vary: "Origin" },
+    });
+  }
+  const h = new Headers({
+    "Access-Control-Allow-Origin": allowed,
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Max-Age": "600",
+    Vary: "Origin",
+  });
+  return new Response(null, { status: 204, headers: h });
 }
