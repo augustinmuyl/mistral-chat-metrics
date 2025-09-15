@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Menu as MenuIcon, Trash2 } from "lucide-react";
+import { Menu as MenuIcon, Trash2, BarChart3 } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -42,6 +42,8 @@ type Props = {
   onNewChat?: () => void;
   onDeleteConversation?: () => void;
   onExportConversation?: () => void;
+  onOpenMetrics?: () => void;
+  canOpenMetrics?: boolean;
 };
 
 export default function Topbar({
@@ -56,6 +58,8 @@ export default function Topbar({
   onNewChat,
   onDeleteConversation,
   onExportConversation,
+  onOpenMetrics,
+  canOpenMetrics,
 }: Props) {
   const canDelete = Boolean(
     currentConversationId &&
@@ -131,7 +135,16 @@ export default function Topbar({
       </div>
 
       {/* Mobile hamburger menu */}
-      <div className="sm:hidden">
+      <div className="sm:hidden flex items-center gap-2">
+        {canOpenMetrics ? (
+          <button
+            className="border rounded p-2 inline-flex items-center justify-center hover:cursor-pointer"
+            aria-label="Open metrics"
+            onClick={onOpenMetrics}
+          >
+            <BarChart3 className="size-5" />
+          </button>
+        ) : null}
         <DropdownMenu>
           <DropdownMenuTrigger
             aria-label="Open menu"

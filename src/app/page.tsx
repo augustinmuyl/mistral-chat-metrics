@@ -8,6 +8,15 @@ import ChatComposer from "@/components/ChatComposer";
 import SidebarMetrics from "@/components/SidebarMetrics";
 import EmptyState from "@/components/EmptyState";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerFooter,
+  DrawerClose,
+} from "@/components/ui/drawer";
+import { Button } from "@/components/ui/button";
 import type { Message } from "@/lib/schemas";
 import { streamChat, type StreamController } from "@/lib/streaming";
 import {
@@ -37,6 +46,7 @@ export default function Home() {
   const [mockEnabled, setMockEnabled] = useState<boolean | undefined>(
     undefined,
   );
+  const [metricsOpen, setMetricsOpen] = useState(false);
 
   const [latencyMs, setLatencyMs] = useState<number | undefined>();
   const [durationMs, setDurationMs] = useState<number | undefined>();
@@ -149,7 +159,7 @@ export default function Home() {
 
           // Persist conversation
           const title = deriveTitle(nextMessages[0]?.content || "", 60) || "Conversation";
-          const mappedPrev: Conversation["messages"] = nextMessages.map(({ id, role, content }: Message) => ({ id, role, content })) as Conversation["messages"]; 
+          const mappedPrev: Conversation["messages"] = nextMessages.map(({ id, role, content }: Message) => ({ id, role, content })) as Conversation["messages"];
           const convo: Conversation = {
             id: convIdRef.current,
             title,
@@ -188,6 +198,7 @@ export default function Home() {
     setTokens(undefined);
     assistantContentRef.current = "";
     convIdRef.current = newId();
+    setMetricsOpen(false);
   }, [isStreaming, onStop]);
 
   const onSelectConversation = useCallback((id: string) => {
@@ -200,6 +211,7 @@ export default function Home() {
       convIdRef.current = target.id;
       if (target.model) setCurrentModel(target.model);
       if (target.preset) setCurrentPreset(target.preset);
+      setMetricsOpen(false);
       if (Array.isArray(target.messages)) {
         setMessages(
           target.messages.map((m) => ({ id: m.id, role: m.role, content: m.content })) as Message[],
@@ -224,7 +236,7 @@ export default function Home() {
       clearConversation(currentId);
       const list = loadConversations();
       setConversationList(Array.isArray(list) ? list : []);
-    } catch {}
+    } catch { }
     // Reset to a brand-new empty chat
     setMessages([]);
     setLatencyMs(undefined);
@@ -234,6 +246,7 @@ export default function Home() {
     setTokens(undefined);
     assistantContentRef.current = "";
     convIdRef.current = newId();
+    setMetricsOpen(false);
   }, []);
 
   const hasMessages = messages.length > 0;
@@ -251,6 +264,8 @@ export default function Home() {
         onSelectConversation={onSelectConversation}
         onNewChat={onNewChat}
         onDeleteConversation={onDeleteConversation}
+        canOpenMetrics={hasMessages}
+        onOpenMetrics={() => setMetricsOpen(true)}
         onExportConversation={() => {
           try {
             // Prefer the persisted conversation if present
@@ -260,14 +275,14 @@ export default function Home() {
             const convo = existing
               ? existing
               : {
-                  id: convIdRef.current,
-                  title:
-                    deriveTitle(messages[0]?.content || "", 60) ||
-                    "Conversation",
-                  messages: messages.map(({ id, role, content }: Message) => ({ id, role, content })) as Conversation["messages"],
-                  model: currentModel,
-                  preset: currentPreset,
-                };
+                id: convIdRef.current,
+                title:
+                  deriveTitle(messages[0]?.content || "", 60) ||
+                  "Conversation",
+                messages: messages.map(({ id, role, content }: Message) => ({ id, role, content })) as Conversation["messages"],
+                model: currentModel,
+                preset: currentPreset,
+              };
 
             const blob = new Blob([JSON.stringify(convo, null, 2)], {
               type: "application/json;charset=utf-8",
@@ -280,7 +295,7 @@ export default function Home() {
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
-          } catch {}
+          } catch { }
         }}
       />
       {hasMessages ? (
@@ -309,6 +324,7 @@ export default function Home() {
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.25, ease: "easeOut", delay: 0.06 }}
+            className="hidden lg:block"
           >
             <SidebarMetrics
               latencyMs={latencyMs}
@@ -352,6 +368,32 @@ export default function Home() {
           </div>
         </motion.div>
       )}
+      {/* Mobile metrics drawer (only when in a conversation) */}
+      {hasMessages ? (
+        <Drawer open={metricsOpen} onOpenChange={setMetricsOpen} direction="bottom">
+          <DrawerContent className="lg:hidden">
+            <DrawerHeader>
+              <DrawerTitle>Metrics</DrawerTitle>
+            </DrawerHeader>
+            <div className="px-4 pb-2">
+              <SidebarMetrics
+                latencyMs={latencyMs}
+                durationMs={durationMs}
+                reqKB={reqKB}
+                respKB={respKB}
+                model={currentModel}
+                preset={currentPreset}
+                tokens={tokens}
+              />
+            </div>
+            <DrawerFooter>
+              <DrawerClose asChild>
+                <Button variant="outline">Close</Button>
+              </DrawerClose>
+            </DrawerFooter>
+          </DrawerContent>
+        </Drawer>
+      ) : null}
     </div>
   );
 }
