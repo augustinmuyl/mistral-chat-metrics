@@ -47,7 +47,7 @@ export default function DropdownSelect({
         aria-label={ariaLabel}
         disabled={disabled}
         className={cn(
-          "border rounded px-2 py-1 text-sm inline-flex items-center gap-2 select-none",
+          "border rounded px-2 py-1 text-sm inline-flex items-center gap-2 select-none hover:cursor-pointer",
           disabled && "opacity-50 cursor-not-allowed",
           className,
         )}

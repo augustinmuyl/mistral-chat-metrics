@@ -57,7 +57,7 @@ export default function Topbar({
         <ModelSelector value={model} onChange={onModelChange} />
         <SystemPresetSelect value={preset} onChange={onPresetChange} />
         <button
-          className="border rounded px-3 py-1 text-sm"
+          className="border rounded px-3 py-1 text-sm hover:cursor-pointer"
           onClick={onNewChat}
           aria-label="New chat"
         >
@@ -70,7 +70,7 @@ export default function Topbar({
         <DropdownMenu>
           <DropdownMenuTrigger
             aria-label="Open menu"
-            className="border rounded p-2 inline-flex items-center justify-center"
+            className="border rounded p-2 inline-flex items-center justify-center hover:cursor-pointer"
           >
             <MenuIcon className="size-5" />
           </DropdownMenuTrigger>

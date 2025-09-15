@@ -45,10 +45,12 @@ export default function SidebarMetrics({
           <div>Preset</div>
           <div>{preset ?? "-"}</div>
         </div>
-        <div className="border rounded p-2">
-          <div>Tokens</div>
-          <div>{tokens ?? "-"}</div>
-        </div>
+        {typeof tokens === "number" ? (
+          <div className="border rounded p-2">
+            <div>Tokens</div>
+            <div>{tokens}</div>
+          </div>
+        ) : null}
       </div>
     </aside>
   );
