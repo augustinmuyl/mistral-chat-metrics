@@ -31,7 +31,7 @@ function newId() {
 
 export default function Home() {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [currentModel, setCurrentModel] = useState("mistral-large-latest");
+  const [currentModel, setCurrentModel] = useState("mistral-small-latest");
   const [currentPreset, setCurrentPreset] = useState("general");
   const [isStreaming, setIsStreaming] = useState(false);
   const [mockEnabled, setMockEnabled] = useState<boolean | undefined>(

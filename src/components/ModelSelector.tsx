@@ -7,8 +7,8 @@ type Props = {
 
 export default function ModelSelector({ value, onChange }: Props) {
   const options = [
-    { label: "mistral-large-latest", value: "mistral-large-latest" },
     { label: "mistral-small-latest", value: "mistral-small-latest" },
+    { label: "mistral-large-latest", value: "mistral-large-latest" },
   ];
 
   return (
